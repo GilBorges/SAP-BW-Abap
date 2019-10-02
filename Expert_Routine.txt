@@ -1,0 +1,736 @@
+
+
+PROGRAM trans_routine.
+
+
+*---------------------------------------------------------------------*
+*       CLASS routine DEFINITION
+*---------------------------------------------------------------------*
+*
+*---------------------------------------------------------------------*
+CLASS lcl_transform DEFINITION.
+  PUBLIC SECTION.
+
+*  Attributs
+    DATA:
+*-    Rule context
+      p_curr_rule
+            TYPE cl_rstran_runtime_exe=>ty_s_rule_context READ-ONLY,
+      p_check_master_data_exist
+            TYPE RSODSOCHECKONLY READ-ONLY,
+*-    Instance for getting request runtime attributs;
+*     Available information: Refer to methods of
+*     interface 'if_rsbk_request_admintab_view'
+      p_r_request
+            TYPE REF TO if_rsbk_request_admintab_view READ-ONLY.
+
+  PRIVATE SECTION.
+
+    TYPE-POOLS: rsd, rstr.
+
+*   Rule specific types
+    TYPES:
+      BEGIN OF _ty_s_SC_1,
+*      InfoObject: ZBP_DISTR Distribuidor.
+        /BIC/ZBP_DISTR           TYPE /BIC/OIZBP_DISTR,
+*      InfoObject: 0CUST_GROUP Grupo de Clientes.
+        CUST_GROUP           TYPE /BI0/OICUST_GROUP,
+*      InfoObject: 0CUST_GRP1 Grupo de clientes 1.
+        CUST_GRP1           TYPE /BI0/OICUST_GRP1,
+*      InfoObject: 0CUST_GRP2 Grupo de clientes 2.
+        CUST_GRP2           TYPE /BI0/OICUST_GRP2,
+*      InfoObject: 0CUST_GRP3 Grupo de clientes 3.
+        CUST_GRP3           TYPE /BI0/OICUST_GRP3,
+*      InfoObject: 0CUST_GRP4 Grupo de clientes 4.
+        CUST_GRP4           TYPE /BI0/OICUST_GRP4,
+*      InfoObject: 0CUST_GRP5 Grupo de clientes 5.
+        CUST_GRP5           TYPE /BI0/OICUST_GRP5,
+*      InfoObject: ZCST_GRP6 Grupo de clientes 6.
+        /BIC/ZCST_GRP6           TYPE /BIC/OIZCST_GRP6,
+*      InfoObject: ZCST_GRP7 Grupo de clientes 7.
+        /BIC/ZCST_GRP7           TYPE /BIC/OIZCST_GRP7,
+*      InfoObject: ZCST_GRP8 Grupo de clientes 8.
+        /BIC/ZCST_GRP8           TYPE /BIC/OIZCST_GRP8,
+*      InfoObject: ZCST_GRP9 Grupo de clientes 9.
+        /BIC/ZCST_GRP9           TYPE /BIC/OIZCST_GRP9,
+*      InfoObject: 0DISTR_CHAN Canal de distribuição.
+        DISTR_CHAN           TYPE /BI0/OIDISTR_CHAN,
+*      InfoObject: ZAREA_VND Área de Vendas.
+        /BIC/ZAREA_VND           TYPE /BIC/OIZAREA_VND,
+*      InfoObject: ZSISTEMA Sistema fonte.
+        /BIC/ZSISTEMA           TYPE /BIC/OIZSISTEMA,
+*      InfoObject: ZTI Número de TI.
+        /BIC/ZTI           TYPE /BIC/OIZTI,
+*      InfoObject: ZAJUDDEP Número de ajudantes de depósito.
+        /BIC/ZAJUDDEP           TYPE /BIC/OIZAJUDDEP,
+*      InfoObject: ZANALISTA Número de analistas.
+        /BIC/ZANALISTA           TYPE /BIC/OIZANALISTA,
+*      InfoObject: ZANACREDC Número de analistas crédito de cobrança.
+        /BIC/ZANACREDC           TYPE /BIC/OIZANACREDC,
+*      InfoObject: ZANACADAS Número de analistas de cadastro.
+        /BIC/ZANACADAS           TYPE /BIC/OIZANACADAS,
+*      InfoObject: ZANAFINAN Número de analistas financeiros.
+        /BIC/ZANAFINAN           TYPE /BIC/OIZANAFINAN,
+*      InfoObject: ZAUXADMIN Número de auliliares administrativos.
+        /BIC/ZAUXADMIN           TYPE /BIC/OIZAUXADMIN,
+*      InfoObject: ZBACKOFF Número de backoffice's.
+        /BIC/ZBACKOFF           TYPE /BIC/OIZBACKOFF,
+*      InfoObject: ZCAMIOES Número de camiões.
+        /BIC/ZCAMIOES           TYPE /BIC/OIZCAMIOES,
+*      InfoObject: ZCONFERE Número de conferentes.
+        /BIC/ZCONFERE           TYPE /BIC/OIZCONFERE,
+*      InfoObject: ZEMPILHA Número de empilhadoras.
+        /BIC/ZEMPILHA           TYPE /BIC/OIZEMPILHA,
+*      InfoObject: ZENCDEPO Número de encarregados do depósito.
+        /BIC/ZENCDEPO           TYPE /BIC/OIZENCDEPO,
+*      InfoObject: ZENCLOG Número de encarregados logísticos.
+        /BIC/ZENCLOG           TYPE /BIC/OIZENCLOG,
+*      InfoObject: ZFATURIST Número de faturistas.
+        /BIC/ZFATURIST           TYPE /BIC/OIZFATURIST,
+*      InfoObject: ZGER_ADM Número de gerentes administrativos.
+        /BIC/ZGER_ADM           TYPE /BIC/OIZGER_ADM,
+*      InfoObject: ZGERVEND Número de gerentes de vendas.
+        /BIC/ZGERVEND           TYPE /BIC/OIZGERVEND,
+*      InfoObject: ZMONITRTM Número de monitores RTM.
+        /BIC/ZMONITRTM           TYPE /BIC/OIZMONITRTM,
+*      InfoObject: ZOPEREMP Número de operadores de empilhadora.
+        /BIC/ZOPEREMP           TYPE /BIC/OIZOPEREMP,
+*      InfoObject: ZOUTROS Número de outros administrativos.
+        /BIC/ZOUTROS           TYPE /BIC/OIZOUTROS,
+*      InfoObject: ZOUTRVND Número de outros de vendas.
+        /BIC/ZOUTRVND           TYPE /BIC/OIZOUTRVND,
+*      InfoObject: ZOUTRLOG Número de outros logística.
+        /BIC/ZOUTRLOG           TYPE /BIC/OIZOUTRLOG,
+*      InfoObject: ZPORTEIRO Número de porteiros.
+        /BIC/ZPORTEIRO           TYPE /BIC/OIZPORTEIRO,
+*      InfoObject: ZSERVENTE Número de serventes.
+        /BIC/ZSERVENTE           TYPE /BIC/OIZSERVENTE,
+*      InfoObject: ZSUPERRH Número de supervisores de RH.
+        /BIC/ZSUPERRH           TYPE /BIC/OIZSUPERRH,
+*      InfoObject: ZSUPERDEP Número de supervisores do depósito.
+        /BIC/ZSUPERDEP           TYPE /BIC/OIZSUPERDEP,
+*      InfoObject: ZSUPERLOG Número de supervisores logísticos.
+        /BIC/ZSUPERLOG           TYPE /BIC/OIZSUPERLOG,
+*      InfoObject: ZTEAMLEAD Número de team leaders.
+        /BIC/ZTEAMLEAD           TYPE /BIC/OIZTEAMLEAD,
+*      InfoObject: ZTECVND Número de técnicos de vendas.
+        /BIC/ZTECVND           TYPE /BIC/OIZTECVND,
+*      InfoObject: ZRTM RTM.
+        /BIC/ZRTM           TYPE /BIC/OIZRTM,
+*      InfoObject: ZALTARMZ Altura do armazém.
+        /BIC/ZALTARMZ           TYPE /BIC/OIZALTARMZ,
+*      InfoObject: ZAREAARMZ Área coberta do armazém.
+        /BIC/ZAREAARMZ           TYPE /BIC/OIZAREAARMZ,
+*      InfoObject: ZAREADESA Área descoberta do armazém.
+        /BIC/ZAREADESA           TYPE /BIC/OIZAREADESA,
+*      InfoObject: ZDATADESD Data desde.
+        /BIC/ZDATADESD           TYPE /BIC/OIZDATADESD,
+*      InfoObject: 0CITY_1 AEC: localidade.
+        CITY_1           TYPE /BI0/OICITY_1,
+*      InfoObject: 0CITY_2 AEC: zona.
+        CITY_2           TYPE /BI0/OICITY_2,
+*      InfoObject: 0COUNTRY Chave do país.
+        COUNTRY           TYPE /BI0/OICOUNTRY,
+*      InfoObject: 0POSTALCODE AEC: código postal.
+        POSTALCODE           TYPE /BI0/OIPOSTALCODE,
+*      InfoObject: 0STREET60 AEC: rua.
+        STREET60           TYPE /BI0/OISTREET60,
+*      InfoObject: 0HOUSE_NUM1 AEC: nº casa.
+        HOUSE_NUM1           TYPE /BI0/OIHOUSE_NUM1,
+*      InfoObject: ZNUMCONT Número de Identificação Fiscal (NIF).
+        /BIC/ZNUMCONT           TYPE /BIC/OIZNUMCONT,
+*      InfoObject: 0TEL_NUMBER AEC: 1º nº de telefone.
+        TEL_NUMBER           TYPE /BI0/OITEL_NUMBER,
+*      InfoObject: ZSOCIO1 Sócio 1 do Parceiro de Negócios.
+        /BIC/ZSOCIO1           TYPE /BIC/OIZSOCIO1,
+*      InfoObject: ZSOCIO2 Sócio 2 do Parceiro de Negócios.
+        /BIC/ZSOCIO2           TYPE /BIC/OIZSOCIO2,
+*      InfoObject: ZSOCIO3 Sócio 3 do Parceiro de Negócios.
+        /BIC/ZSOCIO3           TYPE /BIC/OIZSOCIO3,
+*      InfoObject: ZMORADA Morada escritório vendas.
+        /BIC/ZMORADA           TYPE /BIC/OIZMORADA,
+*      InfoObject: ZCITY1 Localidade do Escritório de Vendas.
+        /BIC/ZCITY1           TYPE /BIC/OIZCITY1,
+*      InfoObject: ZPOSTCODE Código Postal do Escritório de Vendas.
+        /BIC/ZPOSTCODE           TYPE /BIC/OIZPOSTCODE,
+*      InfoObject: ZREGION Região do Escritório de Vendas.
+        /BIC/ZREGION           TYPE /BIC/OIZREGION,
+*      InfoObject: ZDTULTCD Data último consumo distribuidor.
+        /BIC/ZDTULTCD           TYPE /BIC/OIZDTULTCD,
+*      InfoObject: 0SHIP_TO Recebedor da mercadoria.
+        SHIP_TO           TYPE /BI0/OISHIP_TO,
+*      InfoObject: 0RECORD.
+        RECORD           TYPE RSARECORD,
+      END   OF _ty_s_SC_1.
+    TYPES:
+      _ty_t_SC_1        TYPE STANDARD TABLE OF _ty_s_SC_1
+                        WITH NON-UNIQUE DEFAULT KEY.
+    TYPES:
+      BEGIN OF _ty_s_TG_1,
+*      Field: SID.
+        SID           TYPE RSSID,
+*      Field: DATAPAKID.
+        DATAPAKID           TYPE RSDATAPID,
+*      Field: RECORD.
+        RECORD           TYPE RSARECORD,
+*      InfoObject: XDISTNAME Nome Distribuidor.
+        /BIC/XDISTNAME           TYPE /BIC/OIXDISTNAME,
+*      InfoObject: XENTJUR Entidade Jurídica.
+        /BIC/XENTJUR           TYPE /BIC/OIXENTJUR,
+*      InfoObject: XRECORD RecordType.
+        /BIC/XRECORD           TYPE /BIC/OIXRECORD,
+*      InfoObject: 0RECORDMODE Processo delta BW: modo de atualização.
+        RECORDMODE           TYPE RODMUPDMOD,
+*      InfoObject: XENT_NOME Ent. Juridica Nome.
+        /BIC/XENT_NOME           TYPE /BIC/OIXENT_NOME,
+*      InfoObject: XPN2 PN Nome 2.
+        /BIC/XPN2           TYPE /BIC/OIXPN2,
+*      InfoObject: XAEC AEC Rua.
+        /BIC/XAEC           TYPE /BIC/OIXAEC,
+*      InfoObject: XAEC2 AEC Rua 2.
+        /BIC/XAEC2           TYPE /BIC/OIXAEC2,
+*      InfoObject: XAEC3 AEC Rua 3.
+        /BIC/XAEC3           TYPE /BIC/OIXAEC3,
+*      InfoObject: XAEC4 AEC Rua 4.
+        /BIC/XAEC4           TYPE /BIC/OIXAEC4,
+*      InfoObject: XAECZ AEC Zona.
+        /BIC/XAECZ           TYPE /BIC/OIXAECZ,
+*      InfoObject: XAEC_CASA AEC Casa.
+        /BIC/XAEC_CASA           TYPE /BIC/OIXAEC_CASA,
+*      InfoObject: ZAEC_COMP AEC Complemento.
+        /BIC/ZAEC_COMP           TYPE /BIC/OIZAEC_COMP,
+*      InfoObject: XPOSTAL Cod. Postal.
+        /BIC/XPOSTAL           TYPE /BIC/OIXPOSTAL,
+*      InfoObject: XLOCAL Localidade.
+        /BIC/XLOCAL           TYPE /BIC/OIXLOCAL,
+*      InfoObject: XPAIS Pais.
+        /BIC/XPAIS           TYPE /BIC/OIXPAIS,
+*      InfoObject: XPAISNOME País Nome.
+        /BIC/XPAISNOME           TYPE /BIC/OIXPAISNOME,
+*      InfoObject: XREG_NOME Região Nome.
+        /BIC/XREG_NOME           TYPE /BIC/OIXREG_NOME,
+*      InfoObject: XAECTEL AEC nº telefone.
+        /BIC/XAECTEL           TYPE /BIC/OIXAECTEL,
+*      InfoObject: XAECFAX AEC nº fax.
+        /BIC/XAECFAX           TYPE /BIC/OIXAECFAX,
+*      InfoObject: XAECMOV AEC Móvel.
+        /BIC/XAECMOV           TYPE /BIC/OIXAECMOV,
+*      InfoObject: XNIF NIF.
+        /BIC/XNIF           TYPE /BIC/OIXNIF,
+*      InfoObject: XEMAIL Email.
+        /BIC/XEMAIL           TYPE /BIC/OIXEMAIL,
+      END   OF _ty_s_TG_1.
+    TYPES:
+      _ty_t_TG_1        TYPE STANDARD TABLE OF _ty_s_TG_1
+                        WITH NON-UNIQUE DEFAULT KEY.
+
+*$*$ begin of global - insert your declaration only below this line  *-*
+    ... "insert your code here
+*====Declaração das variáveis globais=====================
+
+
+
+**Tabela interna de Distribuidores=============================
+    DATA: LT_DIST TYPE TABLE OF /BIC/TZBP_DISTR.
+    DATA: LS_DIST TYPE /BIC/TZBP_DISTR.
+
+**Tabela interna de <DSO> Pontos de Venda======================
+    TYPES: BEGIN OF T_DSO1,
+             BPARTNER1 TYPE /BI0/OIBPARTNER1,
+             BPARTNER2 TYPE /BI0/OIBPARTNER2,
+           END OF T_DSO1.
+
+**Tabela interna de <DSO> ntidade Jurídica====================
+    TYPES: BEGIN OF T_DSO2,
+             BPARTNER1 TYPE /BI0/OIBPARTNER1,
+             BPARTNER2 TYPE /BI0/OIBPARTNER2,
+           END OF T_DSO2.
+
+    DATA: TI_DSO1 TYPE TABLE OF T_DSO1,
+          W_DSO1  TYPE T_DSO1.
+
+    DATA: TI_DSO2 TYPE TABLE OF T_DSO2,
+          W_DSO2  TYPE T_DSO2.
+
+    TYPES: BEGIN OF T_DSO2_P,
+             /BIC/ZBPARTNER TYPE /BI0/OIBPARTNER2,
+           END OF T_DSO2_P.
+
+    DATA: TI_DSO2_P TYPE TABLE OF T_DSO2_P,
+          W_DSO2_P  TYPE T_DSO2_P.
+
+**Tabela interna final de Entidade Jurídica==============
+    TYPES: BEGIN OF T_ENTJUR2,
+             /BIC/ZBP_DISTR TYPE /BI0/OIBPARTNER1,
+             ZBPARTNER      TYPE /BI0/OIBPARTNER2,
+           END OF T_ENTJUR2.
+
+    DATA: TI_ENTJUR2 TYPE TABLE OF T_ENTJUR2,
+          W_ENTJUR2  TYPE T_ENTJUR2.
+
+** Tabela interna de texto Parceiro de Negócio==========
+    TYPES: BEGIN OF T_PNTEXT,
+             /BIC/ZBPARTNER TYPE /BIC/OIZBPARTNER,
+             TXTLG          TYPE RSTXTLG,
+           END OF T_PNTEXT.
+
+    DATA: TI_PN_T TYPE TABLE OF T_PNTEXT,
+          W_PN_T  TYPE T_PNTEXT.
+
+** Tabela interna de texto País=========================
+    TYPES: BEGIN OF T_CNTEXT,
+             COUNTRY TYPE /BI0/OICOUNTRY,
+             TXTSH   TYPE RSTXTSH,
+           END OF T_CNTEXT.
+
+    DATA: TI_CN_T TYPE TABLE OF T_CNTEXT,
+          W_CN_T  TYPE T_CNTEXT.
+
+    DATA: V_INDEX  TYPE SY-TABIX,
+          V_INDEX2 TYPE SY-TABIX.
+
+**Tabela interna ZBPARTNER===============================
+    TYPES: BEGIN OF T_ZBPARTNER,
+             /BIC/ZBPARTNER TYPE /BIC/OIZBPARTNER,
+             NAME_ORG2      TYPE /BI0/OINAME_ORG2,
+             STREET60       TYPE /BI0/OISTREET60,
+             STR_SUPPL1     TYPE /BI0/OISTR_SUPPL1,
+             STR_SUPPL2     TYPE /BI0/OISTR_SUPPL2,
+             STR_SUPPL4     TYPE /BI0/OISTR_SUPPL4,
+             CITY_2         TYPE /BI0/OICITY_2,
+             HOUSE_NUM1     TYPE /BI0/OIHOUSE_NUM1,
+             TITLE_SPPL     TYPE /BI0/OITITLE_SPPL,
+             POSTALCODE     TYPE /BI0/OIPOSTALCODE,
+             CITY_1         TYPE /BI0/OICITY_1,
+             COUNTRY        TYPE /BI0/OICOUNTRY,
+             REGION         TYPE /BI0/OIREGIO_GRP,
+             TEL_NUMBER     TYPE /BI0/OITEL_NUMBER,
+             FAX_NUMBER     TYPE /BI0/OIFAX_NUMBER,
+             /BIC/ZTELEMOV  TYPE /BIC/OIZTELEMOV,
+             /BIC/ZNUMCONT  TYPE /BIC/OIZNUMCONT,
+             EMAIL_ADDR     TYPE /BI0/OIEMAIL_ADDR,
+           END OF T_ZBPARTNER.
+
+    DATA: TI_ZBPARTNER TYPE TABLE OF T_ZBPARTNER,
+          W_ZBPARTNER  TYPE T_ZBPARTNER.
+
+**Tabela interna
+
+    TYPES: BEGIN OF T_ENTJUR.
+        INCLUDE TYPE _TY_S_SC_1.
+    TYPES: ZBPARTNER TYPE /BIC/OIZBPARTNER.
+    TYPES: END OF T_ENTJUR.
+
+    DATA: TI_ENTJUR TYPE TABLE OF T_ENTJUR,
+          W_ENTJUR  TYPE T_ENTJUR.
+*
+*    data: ti_entjur2 type table of t_entjur,
+*          w_entjur2  type t_entjur.
+*
+*    data: v_index type sy-tabix.
+
+
+
+
+*$*$ end of global - insert your declaration only before this line   *-*
+    METHODS
+      new_record__expert_routine
+        IMPORTING
+          log                      type ref to cl_rsbm_log_cursor_step
+          source_segid             type rstran_segid
+          source_record            type sytabix
+          target_segid             type rstran_segid
+        EXPORTING
+          record_new               type sytabix.
+
+    METHODS
+      expert_routine
+        IMPORTING
+          request                  type rsrequest
+          datapackid               type rsdatapid
+          log                      type ref to cl_rsbm_log_cursor_step
+        EXPORTING
+          RESULT_PACKAGE              type _ty_t_TG_1
+        CHANGING
+          SOURCE_PACKAGE              type _ty_t_SC_1.
+
+    METHODS
+      inverse_expert_routine
+        IMPORTING
+          i_th_fields_outbound         TYPE rstran_t_field_inv
+          i_r_selset_outbound          TYPE REF TO cl_rsmds_set
+          i_r_universe_inbound         TYPE REF TO cl_rsmds_universe
+        CHANGING
+          c_th_fields_inbound          TYPE rstran_t_field_inv
+          c_r_selset_inbound           TYPE REF TO cl_rsmds_set
+          c_exact                      TYPE rs_bool.
+ENDCLASS.                    "routine DEFINITION
+
+*$*$ begin of 2nd part global - insert your code only below this line  *
+... "insert your code here
+
+
+
+*$*$ end of 2nd part global - insert your code only before this line   *
+
+*---------------------------------------------------------------------*
+*       CLASS routine IMPLEMENTATION
+*---------------------------------------------------------------------*
+*
+*---------------------------------------------------------------------*
+CLASS lcl_transform IMPLEMENTATION.
+
+*----------------------------------------------------------------------*
+*       Method expert_routine
+*----------------------------------------------------------------------*
+*       Calculation of result package via expert routine
+*----------------------------------------------------------------------*
+*   -> package of source segments
+*   <- result package
+*----------------------------------------------------------------------*
+  METHOD expert_routine.
+*=== Segments ===
+
+    FIELD-SYMBOLS:
+      <SOURCE_FIELDS>    TYPE _ty_s_SC_1.
+
+    DATA:
+      RESULT_FIELDS      TYPE _ty_s_TG_1.
+
+*$*$ begin of routine - insert your code only below this line        *-*
+    ... "insert your code here
+
+    ... "insert your code here
+
+*  Preparação do Tabela de distribuidores
+
+    IF TI_ZBPARTNER[] IS INITIAL.
+*  Preparação do ZBPARTNER
+      SELECT /BIC/ZBPARTNER NAME_ORG2 STREET60 STR_SUPPL1 STR_SUPPL2
+      STR_SUPPL4 CITY_2 HOUSE_NUM1 TITLE_SPPL
+          POSTALCODE CITY_1 COUNTRY REGION TEL_NUMBER FAX_NUMBER
+          /BIC/ZTELEMOV /BIC/ZNUMCONT
+          EMAIL_ADDR
+        FROM /BIC/PZBPARTNER
+        INTO TABLE TI_ZBPARTNER.
+      SORT TI_ZBPARTNER BY /BIC/ZBPARTNER.
+
+      SELECT BPARTNER2
+      FROM /BIC/AZCRM_R0100
+      INTO TABLE TI_DSO2_P
+      WHERE DATETO EQ '99991231' AND
+            CMS_RELTYP EQ 'ZURC01' AND
+            BP_RELDIR  EQ '1'.
+
+      SORT TI_DSO2_P.
+      DELETE ADJACENT DUPLICATES FROM TI_DSO2_P COMPARING /BIC/ZBPARTNER
+      .
+      LOOP AT TI_ZBPARTNER INTO W_ZBPARTNER.
+        READ TABLE TI_DSO2_P INTO W_DSO2_P WITH KEY /BIC/ZBPARTNER =
+        W_ZBPARTNER-/BIC/ZBPARTNER BINARY SEARCH.
+        IF SY-SUBRC NE 0.
+          DELETE TI_ZBPARTNER.
+        ENDIF.
+      ENDLOOP.
+
+      CLEAR: TI_DSO2_P.
+      FREE: TI_DSO2_P.
+      REFRESH: TI_DSO2_P.
+
+      SELECT /BIC/ZBPARTNER TXTLG
+        FROM /BIC/TZBPARTNER
+         INTO TABLE TI_PN_T
+         FOR ALL ENTRIES IN TI_ZBPARTNER
+        WHERE /BIC/ZBPARTNER EQ TI_ZBPARTNER-/BIC/ZBPARTNER.
+
+      SORT TI_PN_T BY /BIC/ZBPARTNER.
+
+      SELECT COUNTRY TXTSH
+      FROM /BI0/TCOUNTRY
+       INTO TABLE TI_CN_T
+       FOR ALL ENTRIES IN TI_ZBPARTNER
+      WHERE COUNTRY EQ TI_ZBPARTNER-COUNTRY AND
+            LANGU = 'PT'.
+      SORT TI_CN_T BY COUNTRY.
+
+    ENDIF.
+
+**=====Populando tabela interna Pontos de Venda (DSO ZCRM_R01)====
+    IF TI_DSO1[] IS INITIAL.
+
+      SELECT BPARTNER1 BPARTNER2
+        FROM /BIC/AZCRM_R0100
+          INTO TABLE TI_DSO1
+          WHERE DATETO EQ '99991231' AND
+                CMS_RELTYP EQ 'ZDISTM' AND
+                BP_RELDIR  EQ '1'.
+
+      SORT  TI_DSO1 BY BPARTNER2.
+    ENDIF.
+
+**=======Populando tabela interna Entidade Jurídica (ZCRM_R01)====
+    IF TI_DSO2[] IS INITIAL.
+
+      SELECT BPARTNER1 BPARTNER2
+        FROM /BIC/AZCRM_R0100
+        INTO TABLE TI_DSO2
+        WHERE DATETO EQ '99991231' AND
+              CMS_RELTYP EQ 'ZURC01' AND
+              BP_RELDIR  EQ '1'.
+
+      SORT  TI_DSO2 BY BPARTNER1.
+    ENDIF.
+
+    CLEAR LT_DIST.
+    IF LT_DIST IS INITIAL.
+
+      SELECT * FROM /BIC/TZBP_DISTR
+        INTO TABLE LT_DIST
+        FOR ALL ENTRIES IN SOURCE_PACKAGE
+        WHERE /BIC/ZBP_DISTR EQ SOURCE_PACKAGE-/BIC/ZBP_DISTR.
+
+      SORT LT_DIST BY /BIC/ZBP_DISTR.
+    ENDIF.
+
+    LOOP AT SOURCE_PACKAGE INTO W_ENTJUR.
+      READ TABLE TI_DSO1 INTO W_DSO1 WITH KEY BPARTNER2 =
+      W_ENTJUR-/BIC/ZBP_DISTR BINARY SEARCH.
+      IF SY-SUBRC EQ 0.
+        V_INDEX = SY-TABIX.
+        WHILE SY-SUBRC EQ 0 AND W_DSO1-BPARTNER2 EQ
+        W_ENTJUR-/BIC/ZBP_DISTR.
+          READ TABLE TI_DSO2 INTO W_DSO2 WITH KEY BPARTNER1 =
+          W_DSO1-BPARTNER1 BINARY SEARCH.
+          V_INDEX2 = SY-TABIX.
+          WHILE  SY-SUBRC EQ 0 AND W_DSO2-BPARTNER1 EQ W_DSO1-BPARTNER1.
+            MOVE-CORRESPONDING W_ENTJUR TO W_ENTJUR2.
+            MOVE W_DSO2-BPARTNER2 TO W_ENTJUR2-ZBPARTNER.
+            APPEND W_ENTJUR2 TO TI_ENTJUR2.
+            ADD 1 TO V_INDEX2.
+            READ TABLE TI_DSO2 INTO W_DSO2 INDEX V_INDEX2.
+          ENDWHILE.
+          ADD 1 TO V_INDEX.
+          READ TABLE TI_DSO1 INTO W_DSO1 INDEX V_INDEX.
+        ENDWHILE.
+      ENDIF.
+    ENDLOOP.
+    SORT TI_ENTJUR2 BY /BIC/ZBP_DISTR ZBPARTNER.
+    DELETE ADJACENT DUPLICATES FROM TI_ENTJUR2 COMPARING /BIC/ZBP_DISTR
+    ZBPARTNER.
+
+
+    LOOP AT TI_ENTJUR2 INTO W_ENTJUR2.
+
+
+      CLEAR LS_DIST.
+      READ TABLE LT_DIST INTO LS_DIST WITH KEY
+      /BIC/ZBP_DISTR = W_ENTJUR2-/BIC/ZBP_DISTR
+      BINARY SEARCH.
+
+*    Translate para UpperCaseo campo XDISTNAME. *
+      IF SY-SUBRC EQ 0.
+
+        RESULT_FIELDS-/BIC/XDISTNAME = LS_DIST-TXTLG.
+        TRANSLATE RESULT_FIELDS-/BIC/XDISTNAME TO UPPER CASE.
+              ENDIF.
+
+      RESULT_FIELDS-/BIC/XENTJUR = W_ENTJUR2-ZBPARTNER.
+      READ TABLE TI_ZBPARTNER INTO W_ZBPARTNER WITH KEY /BIC/ZBPARTNER =
+      W_ENTJUR2-ZBPARTNER BINARY SEARCH.
+      IF SY-SUBRC EQ 0.
+        RESULT_FIELDS-/BIC/XRECORD = 'CRM'.
+        RESULT_FIELDS-/BIC/XPN2   = W_ZBPARTNER-NAME_ORG2.
+        RESULT_FIELDS-/BIC/XAEC   = W_ZBPARTNER-STREET60.
+        RESULT_FIELDS-/BIC/XAEC2  = W_ZBPARTNER-STR_SUPPL1.
+        RESULT_FIELDS-/BIC/XAEC3  = W_ZBPARTNER-STR_SUPPL2.
+        RESULT_FIELDS-/BIC/XAEC4  = W_ZBPARTNER-STR_SUPPL4.
+        RESULT_FIELDS-/BIC/XAECZ  = W_ZBPARTNER-CITY_2.
+        RESULT_FIELDS-/BIC/XAEC_CASA   = W_ZBPARTNER-HOUSE_NUM1.
+        RESULT_FIELDS-/BIC/ZAEC_COMP   = W_ZBPARTNER-TITLE_SPPL.
+        RESULT_FIELDS-/BIC/XPOSTAL     = W_ZBPARTNER-POSTALCODE.
+        RESULT_FIELDS-/BIC/XLOCAL      = W_ZBPARTNER-CITY_1.
+        RESULT_FIELDS-/BIC/XPAIS       = W_ZBPARTNER-COUNTRY.
+        RESULT_FIELDS-/BIC/XREG_NOME   = W_ZBPARTNER-REGION.
+        RESULT_FIELDS-/BIC/XAECTEL     = W_ZBPARTNER-TEL_NUMBER.
+        RESULT_FIELDS-/BIC/XAECFAX     = W_ZBPARTNER-FAX_NUMBER.
+        RESULT_FIELDS-/BIC/XAECMOV     = W_ZBPARTNER-/BIC/ZTELEMOV.
+        RESULT_FIELDS-/BIC/XNIF        = W_ZBPARTNER-/BIC/ZNUMCONT.
+        REPLACE ALL OCCURRENCES OF 'PT' IN RESULT_FIELDS-/BIC/XNIF
+        WITH SPACE.
+        RESULT_FIELDS-/BIC/XEMAIL      = W_ZBPARTNER-EMAIL_ADDR.
+        READ TABLE TI_CN_T INTO W_CN_T WITH KEY COUNTRY =
+        W_ZBPARTNER-COUNTRY BINARY SEARCH.
+        IF SY-SUBRC EQ 0.
+          RESULT_FIELDS-/BIC/XPAISNOME   = W_CN_T-TXTSH.
+        ENDIF.
+        READ TABLE TI_PN_T INTO W_PN_T WITH KEY /BIC/ZBPARTNER =
+        W_ZBPARTNER-/BIC/ZBPARTNER BINARY SEARCH.
+        IF SY-SUBRC EQ 0.
+          RESULT_FIELDS-/BIC/XENT_NOME  = W_PN_T-TXTLG.
+        ENDIF.
+      ENDIF.
+      APPEND RESULT_FIELDS TO RESULT_PACKAGE.
+    ENDLOOP.
+
+*    DATA: LT_RESULT TYPE TABLE OF _TY_S_TG_1.
+*
+*    DATA: LS_RESULT TYPE _TY_S_TG_1.
+*    DATA: V_RECORD TYPE RSARECORD VALUE 1.
+*
+*    MOVE: RESULT_PACKAGE[] TO LT_RESULT[].
+*    CLEAR: RESULT_PACKAGE, LS_RESULT.
+*
+*    "Insere cabeçalho apenas uma vez
+*    IF DATAPACKID EQ 1.
+*      "Insere o cabeçalho
+*      LS_RESULT-/BIC/XDISTNAME = 'DIST'.
+*      LS_RESULT-/BIC/XENTJUR   = 'CODI_CRM'.
+*      LS_RESULT-/BIC/XENT_NOME  = 'N_ENTIDJ'.
+*      LS_RESULT-/BIC/XRECORD    = 'RECORDTYPEID'.
+*      LS_RESULT-/BIC/XPN2       = 'N_ENTIDJ2'.
+*      LS_RESULT-/BIC/XAEC       = 'N_ENTIDJ_RUA'.
+*      LS_RESULT-/BIC/XAEC2      = 'N_ENTIDJ_RUA2'.
+*      LS_RESULT-/BIC/XAEC3      = 'N_ENTIDJ_RUA3'.
+*      LS_RESULT-/BIC/XAEC4      = 'N_ENTIDJ_RUA4'.
+*      LS_RESULT-/BIC/XAECZ      = 'N_ENTIDJ_ZONA'.
+*      LS_RESULT-/BIC/XAEC_CASA  = 'N_ENTIDJ_NCASA'.
+*      LS_RESULT-/BIC/ZAEC_COMP  = 'N_ENTIDJ_COMPLCASA'.
+*      LS_RESULT-/BIC/XPOSTAL    = 'N_ENTIDJ_CP'.
+*      LS_RESULT-/BIC/XLOCAL     = 'N_ENTIDJ_LOC'.
+*      LS_RESULT-/BIC/XPAIS      = 'N_ENTIDJ_CPAIS'.
+*      LS_RESULT-/BIC/XPAISNOME = 'N_ENTIDJ_PAIS'.
+*      LS_RESULT-/BIC/XREG_NOME  = 'N_ENTIDJ_REGIAO'.
+*      LS_RESULT-/BIC/XAECTEL    = 'N_ENTIDJ_TELEF'.
+*      LS_RESULT-/BIC/XAECFAX    = 'N_ENTIDJ_FAX'.
+*      LS_RESULT-/BIC/XAECMOV    = 'N_ENTIDJ_TELEM'.
+*      LS_RESULT-/BIC/XNIF       = 'N_ENTIDJ_NIF'.
+*      LS_RESULT-/BIC/XEMAIL     = 'N_ENTIDJ_EMAIL'.
+*      LS_RESULT-RECORD     = V_RECORD.
+*
+*      APPEND LS_RESULT TO RESULT_PACKAGE.
+*      CLEAR: LS_RESULT.
+*
+*    ENDIF.
+*
+*    "Insere os dados
+*    LOOP AT LT_RESULT INTO LS_RESULT.
+*
+*      "Colocar textos entre ""
+*      CONCATENATE '"' LS_RESULT-/BIC/XDISTNAME '"'
+*                 INTO LS_RESULT-/BIC/XDISTNAME.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XENTJUR '"'
+*                 INTO LS_RESULT-/BIC/XENTJUR.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XENT_NOME '"'
+*                 INTO LS_RESULT-/BIC/XENT_NOME.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XRECORD '"'
+*                INTO LS_RESULT-/BIC/XRECORD.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XPN2 '"'
+*                INTO LS_RESULT-/BIC/XPN2.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAEC '"'
+*                 INTO LS_RESULT-/BIC/XAEC.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAEC2 '"'
+*                 INTO LS_RESULT-/BIC/XAEC2.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAEC3 '"'
+*                INTO LS_RESULT-/BIC/XAEC3.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAEC4 '"'
+*                 INTO LS_RESULT-/BIC/XAEC4.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAECZ '"'
+*               INTO LS_RESULT-/BIC/XAECZ.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAEC_CASA '"'
+*                 INTO LS_RESULT-/BIC/XAEC_CASA.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/ZAEC_COMP '"'
+*                 INTO LS_RESULT-/BIC/ZAEC_COMP.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XPOSTAL '"'
+*                 INTO LS_RESULT-/BIC/XPOSTAL.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XLOCAL '"'
+*                 INTO LS_RESULT-/BIC/XLOCAL.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XPAIS '"'
+*           INTO LS_RESULT-/BIC/XPAIS.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XPAISNOME '"'
+*                 INTO LS_RESULT-/BIC/XPAISNOME.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XREG_NOME '"'
+*              INTO LS_RESULT-/BIC/XREG_NOME.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAECTEL '"'
+*           INTO LS_RESULT-/BIC/XAECTEL.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAECFAX '"'
+*            INTO LS_RESULT-/BIC/XAECFAX.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XAECMOV '"'
+*             INTO LS_RESULT-/BIC/XAECMOV.
+*
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XNIF '"'
+*                 INTO LS_RESULT-/BIC/XNIF.
+*
+*      CONCATENATE '"' LS_RESULT-/BIC/XEMAIL '"'
+*                 INTO LS_RESULT-/BIC/XEMAIL.
+*
+*
+*      CLEAR LS_RESULT-RECORD.
+*      LS_RESULT-RECORD = V_RECORD + 1.
+*      CLEAR V_RECORD.
+*      V_RECORD = LS_RESULT-RECORD.
+*
+*      APPEND LS_RESULT TO RESULT_PACKAGE.
+*      CLEAR: LS_RESULT.
+*    ENDLOOP.
+
+
+*$*$ end of routine - insert your code only before this line         *-*
+  ENDMETHOD.                    "expert_routine
+*----------------------------------------------------------------------*
+*       Inverse method inverse_expert_routine
+*----------------------------------------------------------------------*
+*       This subroutine needs to be implemented only for direct access
+*       (for better performance) and for the Report/Report Interface
+*       (drill through).
+*       The inverse routine should transform a projection and
+*       a selection for the target to a projection and a selection
+*       for the source, respectively.
+*       If the implementation remains empty all fields are filled and
+*       all values are selected.
+*----------------------------------------------------------------------*
+*       Customer comment:
+*----------------------------------------------------------------------*
+  METHOD inverse_expert_routine.
+
+*   IMPORTING
+*     i_r_selset_outbound          TYPE REF TO cl_rsmds_set
+*     i_th_fields_outbound         TYPE HASHED TABLE
+*     i_r_selset_outbound_complete TYPE REF TO cl_rsmds_set
+*     i_r_universe_inbound         TYPE REF TO cl_rsmds_universe
+*   CHANGING
+*     c_r_selset_inbound           TYPE REF TO cl_rsmds_set
+*     c_th_fields_inbound          TYPE HASHED TABLE
+*     c_exact                      TYPE rs_bool
+
+*$*$ begin of inverse routine - insert your code only below this line*-*
+    ... "insert your code here
+*$*$ end of inverse routine - insert your code only before this line *-*
+
+  ENDMETHOD.                    "inverse_expert_routine
+
+  METHOD new_record__expert_routine.
+
+***** IMPLEMENTATION  is only visible in generated program *****
+
+  ENDMETHOD.
+ENDCLASS.                    "routine IMPLEMENTATION

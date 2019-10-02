@@ -1,0 +1,513 @@
+PROGRAM trans_routine.
+
+
+*---------------------------------------------------------------------*
+*       CLASS routine DEFINITION
+*---------------------------------------------------------------------*
+*
+*---------------------------------------------------------------------*
+CLASS lcl_transform DEFINITION.
+  PUBLIC SECTION.
+
+*  Attributs
+    DATA:
+      p_check_master_data_exist
+            TYPE RSODSOCHECKONLY READ-ONLY,
+*-    Instance for getting request runtime attributs;
+*     Available information: Refer to methods of
+*     interface 'if_rsbk_request_admintab_view'
+      p_r_request
+            TYPE REF TO if_rsbk_request_admintab_view READ-ONLY.
+
+  PRIVATE SECTION.
+
+    TYPE-POOLS: rsd, rstr.
+
+*   Rule specific types
+    TYPES:
+      BEGIN OF _ty_s_SC_1,
+*      InfoObject: 0CALDAY Dia do calendário.
+        CALDAY           TYPE /BI0/OICALDAY,
+*      InfoObject: 0CALMONTH Ano civil / mês.
+        CALMONTH           TYPE /BI0/OICALMONTH,
+*      InfoObject: 0CALQUARTER Ano civil / trimestre.
+        CALQUARTER           TYPE /BI0/OICALQUARTER,
+*      InfoObject: 0CALWEEK Ano civil / semana.
+        CALWEEK           TYPE /BI0/OICALWEEK,
+*      InfoObject: 0HALFYEAR1 Semestre.
+        HALFYEAR1           TYPE /BI0/OIHALFYEAR1,
+*      InfoObject: 0CALYEAR Ano civil.
+        CALYEAR           TYPE /BI0/OICALYEAR,
+*      InfoObject: ZRECEBED Recebedor (ID+Canal).
+        /BIC/ZRECEBED           TYPE /BIC/OIZRECEBED,
+*      InfoObject: 0DISTR_CHAN Canal de distribuição.
+        DISTR_CHAN           TYPE /BI0/OIDISTR_CHAN,
+*      InfoObject: 0SALESORG Organização de vendas.
+        SALESORG           TYPE /BI0/OISALESORG,
+*      InfoObject: 0DIVISION Setor de atividade.
+        DIVISION           TYPE /BI0/OIDIVISION,
+*      InfoObject: 0MATL_TYPE Tipo de material.
+        MATL_TYPE           TYPE /BI0/OIMATL_TYPE,
+*      InfoObject: ZHIERITEM Hierarquia do Item.
+        /BIC/ZHIERITEM           TYPE /BIC/OIZHIERITEM,
+*      InfoObject: ZMATERIAL Material.
+        /BIC/ZMATERIAL           TYPE /BIC/OIZMATERIAL,
+*      InfoObject: 0VERSION Versão.
+        VERSION           TYPE /BI0/OIVERSION,
+*      InfoObject: ZSDCENTRO Centro de Venda.
+        /BIC/ZSDCENTRO           TYPE /BIC/OIZSDCENTRO,
+*      InfoObject: 0BILL_TYPE Tipo documento de faturamento.
+        BILL_TYPE           TYPE /BI0/OIBILL_TYPE,
+*      InfoObject: 0ITEM_CATEG Categoria de item documento de vendas e d
+*istribuição.
+        ITEM_CATEG           TYPE /BI0/OIITEM_CATEG,
+*      InfoObject: ZNOV_NDOC Nº Documento.
+        /BIC/ZNOV_NDOC           TYPE /BIC/OIZNOV_NDOC,
+*      InfoObject: ZNOV_ODOC Origem do Documento.
+        /BIC/ZNOV_ODOC           TYPE /BIC/OIZNOV_ODOC,
+*      InfoObject: ZBPARTNER Parceiro de Negócios.
+        /BIC/ZBPARTNER           TYPE /BIC/OIZBPARTNER,
+*      InfoObject: 0KNART Tipo de condição.
+        KNART           TYPE /BI0/OIKNART,
+*      InfoObject: ZNOV_ATID ID Artigo.
+        /BIC/ZNOV_ATID           TYPE /BIC/OIZNOV_ATID,
+*      InfoObject: ZNOV_CA Site Comercial:Fatura.
+        /BIC/ZNOV_CA           TYPE /BIC/OIZNOV_CA,
+*      InfoObject: ZNOV_CLID ID Cliente.
+        /BIC/ZNOV_CLID           TYPE /BIC/OIZNOV_CLID,
+*      InfoObject: ZNOV_DCID ID Desconto.
+        /BIC/ZNOV_DCID           TYPE /BIC/OIZNOV_DCID,
+*      InfoObject: ZNOV_DIST Distribuidor Novanet.
+        /BIC/ZNOV_DIST           TYPE /BIC/OIZNOV_DIST,
+*      InfoObject: ZNOV_DNCD DN Vendas.
+        /BIC/ZNOV_DNCD           TYPE /BIC/OIZNOV_DNCD,
+*      InfoObject: ZNOV_GPRO Guid Promo.
+        /BIC/ZNOV_GPRO           TYPE /BIC/OIZNOV_GPRO,
+*      InfoObject: ZNOV_INDC Indicador de Compras.
+        /BIC/ZNOV_INDC           TYPE /BIC/OIZNOV_INDC,
+*      InfoObject: ZNOV_OPER Operador.
+        /BIC/ZNOV_OPER           TYPE /BIC/OIZNOV_OPER,
+*      InfoObject: ZNOV_PLID ID Linha Promo.
+        /BIC/ZNOV_PLID           TYPE /BIC/OIZNOV_PLID,
+*      InfoObject: ZNOV_PRID ID Promoção.
+        /BIC/ZNOV_PRID           TYPE /BIC/OIZNOV_PRID,
+*      InfoObject: ZNOV_TLVD Televenda.
+        /BIC/ZNOV_TLVD           TYPE /BIC/OIZNOV_TLVD,
+*      InfoObject: ZNOV_VDID ID Vendedor.
+        /BIC/ZNOV_VDID           TYPE /BIC/OIZNOV_VDID,
+*      InfoObject: ZNOV_DES1 Desconto 1.
+        /BIC/ZNOV_DES1           TYPE /BIC/OIZNOV_DES1,
+*      InfoObject: ZNOV_DES2 Desconto 2.
+        /BIC/ZNOV_DES2           TYPE /BIC/OIZNOV_DES2,
+*      InfoObject: ZNOV_DES3 Desconto 3.
+        /BIC/ZNOV_DES3           TYPE /BIC/OIZNOV_DES3,
+*      InfoObject: ZNOV_LITR Litros.
+        /BIC/ZNOV_LITR           TYPE /BIC/OIZNOV_LITR,
+*      InfoObject: ZNOV_PLIN Peso Linha.
+        /BIC/ZNOV_PLIN           TYPE /BIC/OIZNOV_PLIN,
+*      InfoObject: ZNOV_QPRO Quantidade Promoção.
+        /BIC/ZNOV_QPRO           TYPE /BIC/OIZNOV_QPRO,
+*      InfoObject: ZNOV_QTCV Quantidade Convertida.
+        /BIC/ZNOV_QTCV           TYPE /BIC/OIZNOV_QTCV,
+*      InfoObject: ZNOV_QTD Quantidade.
+        /BIC/ZNOV_QTD           TYPE /BIC/OIZNOV_QTD,
+*      InfoObject: ZNOV_QTDC Quantidade Colis.
+        /BIC/ZNOV_QTDC           TYPE /BIC/OIZNOV_QTDC,
+*      InfoObject: ZNOV_VALB Valor Bruto.
+        /BIC/ZNOV_VALB           TYPE /BIC/OIZNOV_VALB,
+*      InfoObject: ZNOV_VALC Valor de Compras.
+        /BIC/ZNOV_VALC           TYPE /BIC/OIZNOV_VALC,
+*      InfoObject: ZNOV_VD1S Valor Desconto 1 Sistema.
+        /BIC/ZNOV_VD1S           TYPE /BIC/OIZNOV_VD1S,
+*      InfoObject: ZNOV_VD2C Valor Desconto 2 Coordenador.
+        /BIC/ZNOV_VD2C           TYPE /BIC/OIZNOV_VD2C,
+*      InfoObject: ZNOV_VD2F Valor Desconto 2 Fornecedor.
+        /BIC/ZNOV_VD2F           TYPE /BIC/OIZNOV_VD2F,
+*      InfoObject: ZNOV_VD2S Valor Desconto 2 Sistema.
+        /BIC/ZNOV_VD2S           TYPE /BIC/OIZNOV_VD2S,
+*      InfoObject: ZNOV_VDAL Vendas AL.
+        /BIC/ZNOV_VDAL           TYPE /BIC/OIZNOV_VDAL,
+*      InfoObject: ZNOV_VDTT Vendas Totais.
+        /BIC/ZNOV_VDTT           TYPE /BIC/OIZNOV_VDTT,
+*      InfoObject: 0CURRENCY Código da moeda.
+        CURRENCY           TYPE /BI0/OICURRENCY,
+*      InfoObject: ZNOV_NNDG NND_Grupo.
+        /BIC/ZNOV_NNDG           TYPE /BIC/OIZNOV_NNDG,
+*      InfoObject: ZNOV_NNDR NND_Refrige.
+        /BIC/ZNOV_NNDR           TYPE /BIC/OIZNOV_NNDR,
+*      InfoObject: ZNOV_MDFT Medalhas Feitas EOE.
+        /BIC/ZNOV_MDFT           TYPE /BIC/OIZNOV_MDFT,
+*      InfoObject: ZNOV_MEID ID Medalhas EOE.
+        /BIC/ZNOV_MEID           TYPE /BIC/OIZNOV_MEID,
+*      InfoObject: 0CALMONTH2 Mês do calendário.
+        CALMONTH2           TYPE /BI0/OICALMONTH2,
+*      InfoObject: ZNOV_TOBJ Tipo de Objectivo.
+        /BIC/ZNOV_TOBJ           TYPE /BIC/OIZNOV_TOBJ,
+*      InfoObject: ZNOV_CKPI ID Categoria KPI.
+        /BIC/ZNOV_CKPI           TYPE /BIC/OIZNOV_CKPI,
+*      InfoObject: ZNOV_FOID ID Fornecedor Oficial.
+        /BIC/ZNOV_FOID           TYPE /BIC/OIZNOV_FOID,
+*      InfoObject: ZNOV_SKPI ID Sub-Categoria KPI.
+        /BIC/ZNOV_SKPI           TYPE /BIC/OIZNOV_SKPI,
+*      InfoObject: ZNOV_PPR PPR.
+        /BIC/ZNOV_PPR           TYPE /BIC/OIZNOV_PPR,
+*      InfoObject: ZNOV_TPR TPR.
+        /BIC/ZNOV_TPR           TYPE /BIC/OIZNOV_TPR,
+*      InfoObject: ZNOV_DNVD DN Vendas.
+        /BIC/ZNOV_DNVD           TYPE /BIC/OIZNOV_DNVD,
+*      InfoObject: ZNOV_EN50 ENC50.
+        /BIC/ZNOV_EN50           TYPE /BIC/OIZNOV_EN50,
+*      InfoObject: ZNOV_VLIQ Valor Liquido.
+        /BIC/ZNOV_VLIQ           TYPE /BIC/OIZNOV_VLIQ,
+*      InfoObject: ZNOV_TNET Net Total.
+        /BIC/ZNOV_TNET           TYPE /BIC/OIZNOV_TNET,
+*      InfoObject: ZNOV_MREP Reposição Margem.
+        /BIC/ZNOV_MREP           TYPE /BIC/OIZNOV_MREP,
+*      InfoObject: ZNOV_MLIQ Margem Liquida.
+        /BIC/ZNOV_MLIQ           TYPE /BIC/OIZNOV_MLIQ,
+*      InfoObject: ZNOV_MCOM Comparticipação Margem.
+        /BIC/ZNOV_MCOM           TYPE /BIC/OIZNOV_MCOM,
+*      InfoObject: ZNOV_MARG Margem Após Comparticipação.
+        /BIC/ZNOV_MARG           TYPE /BIC/OIZNOV_MARG,
+*      InfoObject: ZNOV_DVAL Valor Desconto.
+        /BIC/ZNOV_DVAL           TYPE /BIC/OIZNOV_DVAL,
+*      InfoObject: ZNOV_NUN Valor Net Unitário.
+        /BIC/ZNOV_NUN           TYPE /BIC/OIZNOV_NUN,
+*      InfoObject: ZNOV_NUV Net Unitário Venda.
+        /BIC/ZNOV_NUV           TYPE /BIC/OIZNOV_NUV,
+*      InfoObject: ZNOV_DICP Distribuidor Novanet Comparável.
+        /BIC/ZNOV_DICP           TYPE /BIC/OIZNOV_DICP,
+*      InfoObject: ZNOV_CSTO Custo.
+        /BIC/ZNOV_CSTO           TYPE /BIC/OIZNOV_CSTO,
+*      InfoObject: ZNOV_QCOL Colis.
+        /BIC/ZNOV_QCOL           TYPE /BIC/OIZNOV_QCOL,
+*      InfoObject: Z_NDIAS Nº de Dias.
+        /BIC/Z_NDIAS           TYPE /BIC/OIZ_NDIAS,
+*      InfoObject: ZNOV_PRC1 Preço Recomendado.
+        /BIC/ZNOV_PRC1           TYPE /BIC/OIZNOV_PRC1,
+*      InfoObject: ZMES445 Mês 4-4-5.
+        /BIC/ZMES445           TYPE /BIC/OIZMES445,
+*      InfoObject: ZNOV_PRCZ Artigo: Preço Custo Zona.
+        /BIC/ZNOV_PRCZ           TYPE /BIC/OIZNOV_PRCZ,
+*      InfoObject: ZNOV_ENCW Encomenda WinRest.
+        /BIC/ZNOV_ENCW           TYPE /BIC/OIZNOV_ENCW,
+*      InfoObject: ZBPARTNER__ZABC OPB.
+        /BIC/ZBPARTNER/BIC/ZABC           TYPE /BIC/OIZABC,
+*      InfoObject: ZBPARTNER__ZCOD_CONC Concelho.
+        /BIC/ZBPARTNER/BIC/ZCOD_CONC           TYPE /BIC/OIZCOD_CONC,
+*      InfoObject: ZBPARTNER__ZCOD_FREG Freguesia.
+        /BIC/ZBPARTNER/BIC/ZCOD_FREG           TYPE /BIC/OIZCOD_FREG,
+*      InfoObject: ZBPARTNER__ZTPLOGIA3 Tipologia 3.
+        /BIC/ZBPARTNER/BIC/ZTPLOGIA3           TYPE /BIC/OIZTPLOGIA3,
+*      InfoObject: ZMATERIAL__0MATL_GROUP Marca.
+        /BIC/ZMATERIAL__MATL_GROUP           TYPE /BI0/OIMATL_GROUP,
+*      InfoObject: ZMATERIAL__ZCAPACITY Capacity.
+        /BIC/ZMATERIAL/BIC/ZCAPACITY           TYPE /BIC/OIZCAPACITY,
+*      InfoObject: ZMATERIAL__ZEMB_TP Tipo Embalagem.
+        /BIC/ZMATERIAL/BIC/ZEMB_TP           TYPE /BIC/OIZEMB_TP,
+*      InfoObject: ZMATERIAL__ZMATCLASS Variedade.
+        /BIC/ZMATERIAL/BIC/ZMATCLASS           TYPE /BIC/OIZMATCLASS,
+*      InfoObject: ZMATERIAL__ZPACKTYPE Pack Type.
+        /BIC/ZMATERIAL/BIC/ZPACKTYPE           TYPE /BIC/OIZPACKTYPE,
+*      InfoObject: ZMATERIAL__ZSUBBRAND Sub-Brand.
+        /BIC/ZMATERIAL/BIC/ZSUBBRAND           TYPE /BIC/OIZSUBBRAND,
+*      InfoObject: ZNOV_ATID__ZNOV_MAID Marca.
+        /BIC/ZNOV_ATID/BIC/ZNOV_MAID           TYPE /BIC/OIZNOV_MAID,
+*      InfoObject: ZNOV_ATID__ZNOV_SSOT Artigo SCC/OUTROS.
+        /BIC/ZNOV_ATID/BIC/ZNOV_SSOT           TYPE /BIC/OIZNOV_SSOT,
+*      InfoObject: 0INFOPROV InfoProvider.
+        INFOPROV           TYPE RSINFOPROV,
+*      Field: RECORD.
+        RECORD           TYPE RSARECORD,
+      END   OF _ty_s_SC_1.
+    TYPES:
+      _ty_t_SC_1        TYPE STANDARD TABLE OF _ty_s_SC_1
+                        WITH NON-UNIQUE DEFAULT KEY.
+
+*$*$ begin of global - insert your declaration only below this line  *-*
+
+    DATA: lt_regi TYPE TABLE OF /bic/pzbpartner.
+    DATA: ls_regi TYPE /bic/pzbpartner.
+
+    DATA: lt_clid TYPE TABLE OF /bic/pznov_clid.
+    DATA: ls_clid TYPE /bic/pznov_clid.
+
+    DATA: lt_acct TYPE TABLE OF /bic/pzbpartner.
+    DATA: ls_acct TYPE /bic/pzbpartner.
+
+    DATA: lt_acctx TYPE TABLE OF /bic/tzbpartner.
+    DATA: ls_acctx TYPE /bic/tzbpartner.
+
+    DATA: lt_mgrp TYPE TABLE OF /bi0/tmatl_group.
+    DATA: ls_mgrp TYPE /bi0/tmatl_group.
+
+    DATA: lt_rand TYPE TABLE OF /bic/tzsubbrand.
+    DATA: ls_rand TYPE /bic/tzsubbrand.
+
+    DATA: lt_mbtp TYPE TABLE OF /bic/tzemb_tp.
+    DATA: ls_mbtp TYPE /bic/tzemb_tp.
+
+    DATA: lt_maid TYPE TABLE OF /bic/tznov_maid.
+    DATA: ls_maid TYPE /bic/tznov_maid.
+
+    DATA: lt_conc TYPE TABLE OF /bic/tzcod_conc.
+    DATA: ls_conc TYPE /bic/tzcod_conc.
+
+    DATA: lt_freg TYPE TABLE OF /bic/tzcod_freg.
+    DATA: ls_freg TYPE /bic/tzcod_freg.
+
+    DATA: lt_logi TYPE TABLE OF /bic/tztplogia3.
+    DATA: ls_logi TYPE /bic/tztplogia3.
+
+    DATA: lt_zabc TYPE TABLE OF /bic/tzabc.
+    DATA: ls_zabc TYPE /bic/tzabc.
+
+    DATA: ti_zmvar TYPE TABLE OF /bic/tzmvar_cmg.
+    DATA: w_zmvar TYPE /bic/tzmvar_cmg.
+
+    DATA: ti_zcap TYPE TABLE OF /bic/tzcapacity.
+    DATA: w_zcap TYPE /bic/tzcapacity.
+
+*$*$ end of global - insert your declaration only before this line   *-*
+
+    METHODS
+      start_routine
+        IMPORTING
+          request                  type rsrequest
+          datapackid               type rsdatapid
+          segid                    type rsbk_segid
+        EXPORTING
+          monitor                  type rstr_ty_t_monitors
+        CHANGING
+          SOURCE_PACKAGE              type _ty_t_SC_1
+        RAISING
+          cx_rsrout_abort
+          cx_rsbk_errorcount.
+    METHODS
+      inverse_start_routine
+        IMPORTING
+          i_th_fields_outbound         TYPE rstran_t_field_inv
+          I_R_SELSET_OUTBOUND          TYPE REF TO CL_RSMDS_SET
+          i_is_main_selection          TYPE rs_bool
+          i_r_selset_outbound_complete TYPE REF TO cl_rsmds_set
+          i_r_universe_inbound         TYPE REF TO CL_RSMDS_UNIVERSE
+        CHANGING
+          c_th_fields_inbound          TYPE rstran_t_field_inv
+          c_r_selset_inbound           TYPE REF TO CL_RSMDS_SET
+          c_exact                      TYPE rs_bool.
+ENDCLASS.                    "routine DEFINITION
+
+*$*$ begin of 2nd part global - insert your code only below this line  *
+... "insert your code here
+
+
+*$*$ end of 2nd part global - insert your code only before this line   *
+
+*---------------------------------------------------------------------*
+*       CLASS routine IMPLEMENTATION
+*---------------------------------------------------------------------*
+*
+*---------------------------------------------------------------------*
+CLASS lcl_transform IMPLEMENTATION.
+
+*----------------------------------------------------------------------*
+*       Method start_routine
+*----------------------------------------------------------------------*
+*       Calculation of source package via start routine
+*----------------------------------------------------------------------*
+*   <-> source package
+*----------------------------------------------------------------------*
+  METHOD start_routine.
+*=== Segments ===
+
+    FIELD-SYMBOLS:
+      <SOURCE_FIELDS>    TYPE _ty_s_SC_1.
+
+    DATA:
+      MONITOR_REC     TYPE rstmonitor.
+
+*$*$ begin of routine - insert your code only below this line        *-*
+    ... "insert your code here
+*--  fill table "MONITOR" with values of structure "MONITOR_REC"
+*-   to make monitor entries
+    ... "to cancel the update process
+*    raise exception type CX_RSROUT_ABORT.
+
+
+
+
+"********************************************************************
+    SELECT * FROM /bic/pzbpartner
+    INTO TABLE lt_regi
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/zbpartner EQ SOURCE_PACKAGE-/bic/zbpartner.
+
+    SORT lt_regi BY /bic/zbpartner.
+
+"********************************************************************
+    lt_acct[] = lt_regi[].
+
+
+*        SELECT * FROM /BIC/PZBPARTNER
+*        INTO TABLE lt_acct
+*        FOR ALL ENTRIES IN SOURCE_PACKAGE
+*        WHERE /BIC/ZBPARTNER EQ SOURCE_PACKAGE-/BIC/ZBPARTNER.
+*
+*    SORT lt_acct BY /BIC/ZBPARTNER.
+
+"********************************************************************
+    lt_acctx[] = lt_acct[].
+
+*        SELECT * FROM /BIC/TZBPARTNER
+*        INTO TABLE lt_acctx
+*        FOR ALL ENTRIES IN SOURCE_PACKAGE
+*        WHERE /BIC/ZBPARTNER EQ SOURCE_PACKAGE-/BIC/ZBPARTNER.
+*
+*    SORT lt_acct BY /BIC/ZBPARTNER.
+
+"********************************************************************
+
+    SELECT * FROM /bic/pznov_clid
+    INTO TABLE lt_clid
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/znov_clid EQ SOURCE_PACKAGE-/bic/znov_clid.
+
+    SORT lt_clid BY /bic/znov_clid.
+
+"********************************************************************
+
+    SELECT * FROM /bi0/tmatl_group
+    INTO TABLE lt_mgrp
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE matl_group EQ SOURCE_PACKAGE-/bic/zmaterial__matl_group
+    AND langu = 'P'.
+
+    SORT lt_mgrp BY matl_group.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tzsubbrand
+    INTO TABLE lt_rand
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/zsubbrand EQ
+    SOURCE_PACKAGE-/bic/zmaterial/bic/zsubbrand
+    AND langu = 'P'.
+
+    SORT lt_rand BY /bic/zsubbrand.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tzemb_tp
+    INTO TABLE lt_mbtp
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/zemb_tp EQ
+    SOURCE_PACKAGE-/bic/zmaterial/bic/zemb_tp
+    AND langu = 'P'.
+
+    SORT lt_mbtp BY /bic/zemb_tp.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tznov_maid
+    INTO TABLE lt_maid
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/znov_maid EQ
+    SOURCE_PACKAGE-/bic/znov_atid/bic/znov_maid.
+
+    SORT lt_maid BY /bic/znov_maid.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tzcod_conc
+    INTO TABLE lt_conc
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/zcod_conc EQ
+    SOURCE_PACKAGE-/bic/zbpartner/bic/zcod_conc
+    AND langu = 'P'.
+
+    SORT lt_conc BY /bic/zcod_conc.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tzcod_freg
+    INTO TABLE lt_freg
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/zcod_freg EQ
+    SOURCE_PACKAGE-/bic/zbpartner/bic/zcod_freg
+    AND langu = 'P'.
+
+    SORT lt_freg BY /bic/zcod_freg.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tztplogia3
+    INTO TABLE lt_logi
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/ztplogia3 EQ
+    SOURCE_PACKAGE-/bic/zbpartner/bic/ztplogia3
+    AND langu = 'P'.
+
+    SORT lt_logi BY /bic/ztplogia3.
+
+"********************************************************************
+
+    SELECT * FROM /bic/tzabc
+    INTO TABLE lt_zabc
+    FOR ALL ENTRIES IN SOURCE_PACKAGE
+    WHERE /bic/zabc EQ
+    SOURCE_PACKAGE-/bic/zbpartner/bic/zabc
+    AND langu = 'P'.
+
+    SORT lt_zabc BY /bic/zabc.
+
+"********************************************************************
+    IF ti_zmvar[] IS INITIAL.
+      SELECT *
+         FROM /bic/tzmvar_cmg
+        INTO TABLE ti_zmvar
+        WHERE langu EQ 'PT'..
+      SORT ti_zmvar BY /bic/zmvar_cmg.
+    ENDIF.
+
+    IF ti_zcap[] IS INITIAL.
+      SELECT *
+         FROM /bic/tzcapacity
+        INTO TABLE ti_zcap
+        WHERE langu EQ 'PT'..
+      SORT ti_zcap BY /bic/zcapacity.
+    ENDIF.
+
+*$*$ end of routine - insert your code only before this line         *-*
+  ENDMETHOD.                    "start_routine
+*----------------------------------------------------------------------*
+*       Inverse method inverse_start_routine
+*----------------------------------------------------------------------*
+*       This subroutine needs to be implemented only for direct access
+*       (for better performance) and for the Report/Report Interface
+*       (drill through).
+*       The inverse routine should transform a projection and
+*       a selection for the target to a projection and a selection
+*       for the source, respectively.
+*       If the implementation remains empty all fields are filled and
+*       all values are selected.
+*----------------------------------------------------------------------*
+*       Customer comment:
+*----------------------------------------------------------------------*
+  METHOD inverse_start_routine.
+
+*   IMPORTING
+*     i_r_selset_outbound          TYPE REF TO cl_rsmds_set
+*     i_th_fields_outbound         TYPE HASHED TABLE
+*     i_r_selset_outbound_complete TYPE REF TO cl_rsmds_set
+*     i_r_universe_inbound         TYPE REF TO cl_rsmds_universe
+*   CHANGING
+*     c_r_selset_inbound           TYPE REF TO cl_rsmds_set
+*     c_th_fields_inbound          TYPE HASHED TABLE
+*     c_exact                      TYPE rs_bool
+
+*$*$ begin of inverse routine - insert your code only below this line*-*
+    ... "insert your code here
+*$*$ end of inverse routine - insert your code only before this line *-*
+
+  ENDMETHOD.                    "inverse_start_routine
+ENDCLASS.                    "routine IMPLEMENTATION
